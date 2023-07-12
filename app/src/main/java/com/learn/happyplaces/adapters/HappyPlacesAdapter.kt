@@ -1,18 +1,25 @@
 package com.learn.happyplaces.adapters
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.learn.happyplaces.activities.AddHappyPlaceActivity
+import com.learn.happyplaces.activities.MainActivity
+import com.learn.happyplaces.database.DatabaseHandler
 import com.learn.happyplaces.databinding.ItemHappyPlaceBinding
 import com.learn.happyplaces.models.HappyPlaceModel
 
-class HappyPlacesAdapter(private val happyPlaces: ArrayList<HappyPlaceModel>): RecyclerView.Adapter<HappyPlacesAdapter.ViewHolder>() {
+class HappyPlacesAdapter(
+    private val happyPlaces: ArrayList<HappyPlaceModel>,
+    private val context: Context,
+    ): RecyclerView.Adapter<HappyPlacesAdapter.ViewHolder>() {
 
     private var onClickListener: OnClickListener? = null
 
-    inner class ViewHolder(private val binding: ItemHappyPlaceBinding): RecyclerView.ViewHolder(binding.root) {
+    inner class ViewHolder(binding: ItemHappyPlaceBinding): RecyclerView.ViewHolder(binding.root) {
         val ivPlaceImage = binding.ivPlaceImage
         val tvTitle = binding.tvTitle
         val tvDescription = binding.tvDescription
@@ -42,6 +49,24 @@ class HappyPlacesAdapter(private val happyPlaces: ArrayList<HappyPlaceModel>): R
             if (onClickListener != null) {
                 onClickListener!!.onClick(position, happyPlace)
             }
+        }
+    }
+
+    fun notifyEditItem(position: Int, onEdit: (model: HappyPlaceModel) -> Unit) {
+        val intent = Intent(context, AddHappyPlaceActivity::class.java)
+        intent.putExtra(MainActivity.EXTRA_PLACE_DETAILS, happyPlaces[position])
+        onEdit.invoke(happyPlaces[position])
+        notifyItemChanged(position) // Notify any registered observers that the item at position has changed.
+    }
+
+    fun removeAt(position: Int) {
+
+        val dbHandler = DatabaseHandler(context)
+        val isDeleted = dbHandler.deleteHappyPlace(happyPlaces[position])
+
+        if (isDeleted > 0) {
+            happyPlaces.removeAt(position)
+            notifyItemRemoved(position)
         }
     }
 

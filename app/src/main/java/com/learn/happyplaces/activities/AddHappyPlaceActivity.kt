@@ -45,6 +45,9 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
     private var mLatitude: Double = 0.0
     private var mLongitude: Double = 0.0
 
+    private var mHappyPlaceDetails: HappyPlaceModel? = null
+
+
     companion object {
         private const val IMAGE_DIRECTORY = "HappyPlacesImages"
     }
@@ -99,7 +102,29 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
             onBackPressed()
         }
 
+        if (intent.hasExtra(MainActivity.EXTRA_PLACE_DETAILS)) {
+            mHappyPlaceDetails = intent.getParcelableExtra<HappyPlaceModel>(MainActivity.EXTRA_PLACE_DETAILS)
+        }
+
         updateDateInView()
+
+        mHappyPlaceDetails?.let {
+            supportActionBar?.let {
+                this.title = "Edit Happy Place"
+            }
+            binding.etTitle.setText(it.title)
+            binding.etDescription.setText(it.description)
+            binding.etDate.setText(it.date)
+            binding.etLocation.setText(it.location)
+            mLatitude = it.latitude
+            mLongitude = it.longitude
+
+            imageUri = Uri.parse(mHappyPlaceDetails!!.image)
+
+            binding.ivPlaceImage.setImageURI(imageUri)
+
+            binding.btnSave.text = "UPDATE"
+        }
 
         dateSetListener =
             DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth ->
@@ -157,7 +182,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
                     }
                     else -> {
                         val happyPlaceModel = HappyPlaceModel(
-                            0,
+                            if (mHappyPlaceDetails == null) 0 else mHappyPlaceDetails!!.id,
                             binding.etTitle.text.toString(),
                             imageUri.toString(),
                             binding.etDescription.text.toString(),
@@ -167,10 +192,18 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
                             mLongitude
                         )
                         val dbHandler = DatabaseHandler(this)
-                        val addHappyPlace = dbHandler.addHappyPlace(happyPlaceModel)
-                        if (addHappyPlace > 0) {
-                            setResult(Activity.RESULT_OK)
-                            finish()
+                        if (mHappyPlaceDetails == null) {
+                            val addHappyPlace = dbHandler.addHappyPlace(happyPlaceModel)
+                            if (addHappyPlace > 0) {
+                                setResult(Activity.RESULT_OK)
+                                finish()//finishing activity
+                            }
+                        } else {
+                            val updateHappyPlace = dbHandler.updateHappyPlace(happyPlaceModel)
+                            if (updateHappyPlace > 0) {
+                                setResult(Activity.RESULT_OK)
+                                finish()//finishing activity
+                            }
                         }
                     }
                 }
