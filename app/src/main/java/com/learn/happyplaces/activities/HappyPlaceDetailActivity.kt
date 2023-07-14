@@ -1,5 +1,6 @@
 package com.learn.happyplaces.activities
 
+import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -35,6 +36,11 @@ class HappyPlaceDetailActivity : AppCompatActivity() {
             binding.ivPlaceImage.setImageURI(Uri.parse(it.image))
             binding.tvDescription.text = it.description
             binding.tvLocation.text = it.location
+        }
+        binding.btnViewOnMap.setOnClickListener {
+            val intent = Intent(this@HappyPlaceDetailActivity, MapActivity::class.java)
+            intent.putExtra(MainActivity.EXTRA_PLACE_DETAILS, happyPlaceDetailModel)
+            startActivity(intent)
         }
     }
 }

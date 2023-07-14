@@ -18,11 +18,16 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
+import com.learn.happyplaces.R
 import com.learn.happyplaces.database.DatabaseHandler
 import com.learn.happyplaces.databinding.ActivityAddHappyPlaceBinding
 import com.learn.happyplaces.models.HappyPlaceModel
@@ -91,6 +96,21 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
+
+    private val placesLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.let {
+                val place: Place = Autocomplete.getPlaceFromIntent(it)
+                binding.etLocation.setText(place.address)
+                mLatitude = place.latLng!!.latitude
+                mLongitude = place.latLng!!.longitude
+            }
+
+        }
+    }
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAddHappyPlaceBinding.inflate(layoutInflater)
@@ -100,6 +120,13 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
         supportActionBar?.setDisplayHomeAsUpEnabled(true) //
         binding.toolbarAddPlace.setNavigationOnClickListener {
             onBackPressed()
+        }
+
+        if (!Places.isInitialized()) {
+            Places.initialize(
+                this@AddHappyPlaceActivity,
+                resources.getString(R.string.google_maps_api_key)
+            )
         }
 
         if (intent.hasExtra(MainActivity.EXTRA_PLACE_DETAILS)) {
@@ -138,6 +165,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
         binding.etDate.setOnClickListener(this)
         binding.tvAddImage.setOnClickListener(this)
         binding.btnSave.setOnClickListener(this)
+        binding.etLocation.setOnClickListener(this)
     }
 
     override fun onClick(v: View?) {
@@ -208,7 +236,18 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
                     }
                 }
             }
-            // END
+            binding.etLocation.id -> {
+                try {
+                    val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS)
+                    val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+                        .build(this)
+
+                    placesLauncher.launch(intent)
+                }
+                catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
